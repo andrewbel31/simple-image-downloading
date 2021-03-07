@@ -2,7 +2,6 @@ package com.example.imageloading
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.os.Handler
 import android.util.Log
 import android.widget.ImageView
 import java.net.HttpURLConnection
@@ -12,8 +11,7 @@ import java.util.concurrent.ConcurrentHashMap
 class ImageDownloadRunnable(
     private val target: ImageView,
     private val url: String,
-    private val cache: ConcurrentHashMap<String, Bitmap?>,
-    private val handler: Handler
+    private val cache: ConcurrentHashMap<String, Bitmap?>
 ) : Runnable {
 
     override fun run() {
@@ -24,7 +22,9 @@ class ImageDownloadRunnable(
                 }
             }
 
-        handler.post { target.setImageBitmap(bitmap) }
+        if (bitmap != null) {
+            target.post { target.setImageBitmap(bitmap) }
+        }
     }
 
     private fun syncLoadImage(imageUrl: String, width: Int, height: Int): Bitmap? {

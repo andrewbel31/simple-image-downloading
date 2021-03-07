@@ -1,14 +1,8 @@
 package com.example.imageloading
 
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.os.Handler
-import android.os.Looper
-import android.util.Log
 import android.view.View
 import android.widget.ImageView
-import java.net.HttpURLConnection
-import java.net.URL
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
@@ -17,7 +11,6 @@ object ImageDownloader {
 
     private val executorService: ExecutorService = Executors.newCachedThreadPool()
     private val cache = ConcurrentHashMap<String, Bitmap?>()
-    private val handler = Handler(Looper.getMainLooper())
 
     fun download(url: String, into: ImageView) {
         if (cache[url] != null) {
@@ -28,38 +21,20 @@ object ImageDownloader {
             ImageDownloadRunnable(
                 into,
                 url,
-                cache,
-                handler
+                cache
             )
 
-        into.addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
-            override fun onViewAttachedToWindow(v: View?) {
+        into.addOnAttachStateChangeListener(
+            object : View.OnAttachStateChangeListener {
+                override fun onViewAttachedToWindow(v: View?) {
 
-            }
+                }
 
-            override fun onViewDetachedFromWindow(v: View?) {
-                into.removeOnAttachStateChangeListener(this)
-                into.setImageResource(0)
-                handler.removeCallbacks(imageDownloadRunnable)
-            }
-        })
+                override fun onViewDetachedFromWindow(v: View?) {
+                    into.removeOnAttachStateChangeListener(this)
+                    into.post { into.setImageResource(0) }
+                }
+            })
         executorService.submit(imageDownloadRunnable)
-    }
-
-    private fun syncLoadImage(imageUrl: String, width: Int, height: Int): Bitmap? {
-        val url = URL(imageUrl)
-        val connection = url.openConnection() as HttpURLConnection
-        connection.requestMethod = "GET"
-        connection.connect()
-
-        if (connection.responseCode == HttpURLConnection.HTTP_OK) {
-            connection.inputStream.use {
-                val original = BitmapFactory.decodeStream(it)
-                Log.d("ImageDownloader", "download success for $imageUrl")
-                return Bitmap.createScaledBitmap(original, width, height, false)
-            }
-        }
-
-        return null
     }
 }
